@@ -1,6 +1,6 @@
 module github.com/Assistencia-Familiar-Francana/go-observability
 
-go 1.24
+go 1.25.5
 
 require (
 	github.com/go-chi/chi/v5 v5.1.0
