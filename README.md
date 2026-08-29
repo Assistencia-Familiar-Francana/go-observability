@@ -97,10 +97,25 @@ All logs include:
 Returns 200 OK if the process is running. Used by Kubernetes to restart crashed pods.
 
 ### Readiness Probe (`/readyz`)
-Returns 200 OK if the service can handle requests. Checks:
-- Database connectivity
-- Redis connectivity
-- Custom dependency checks
+Returns 200 OK only when every check passes, 503 Service Unavailable otherwise.
+Checks run concurrently under a single 5s budget, and each reports under its own
+name:
+
+```json
+{
+  "status": "error",
+  "checks": [
+    {"name": "database", "status": "ok"},
+    {"name": "keycloak", "status": "error", "error": "GET http://kc/ready: unexpected status 503"}
+  ]
+}
+```
+
+A check that panics is reported as that dependency failing; it does not reach
+the HTTP server.
+
+A `Check` carries its own name. `Checker` is the bare `func(ctx) error` form —
+`obs.Named(name, probe)` (or `obs.CustomChecker`) adapts one into a `Check`.
 
 Example with custom checker:
 
@@ -161,7 +176,10 @@ go-observability/
 ├── logging/         # Zerolog configuration
 │   └── logger.go
 ├── health/          # Health check endpoints
-│   └── health.go
+│   ├── report.go    # Status, CheckResult, Summarize (pure)
+│   ├── check.go     # the Check port and its constructors
+│   ├── evaluate.go  # runs the checks
+│   └── handler.go   # the HTTP boundary
 ├── trace/           # Trace context management
 │   └── trace.go
 └── middleware/      # Chi HTTP middleware

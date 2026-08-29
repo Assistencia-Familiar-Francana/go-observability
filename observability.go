@@ -63,18 +63,22 @@ func LivenessHandler() http.HandlerFunc {
 }
 
 // ReadinessHandler returns a readiness probe handler with dependency checks.
-func ReadinessHandler(checkers ...health.Checker) http.HandlerFunc {
-	return health.ReadinessHandler(checkers...)
+func ReadinessHandler(checks ...health.Check) http.HandlerFunc {
+	return health.ReadinessHandler(checks...)
 }
 
 // Convenient re-exports for common types
 type (
-	Logger  = logging.Logger
+	Logger = logging.Logger
+	// Check is a health probe carrying the name it is reported under.
+	Check = health.Check
+	// Checker is a bare probe function; Named adapts one into a Check.
 	Checker = health.Checker
 )
 
 // Health check constructors
 var (
+	Named           = health.Named
 	DatabaseChecker = health.DatabaseChecker
 	CustomChecker   = health.CustomChecker
 	RedisChecker    = health.RedisChecker
